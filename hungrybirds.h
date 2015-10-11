@@ -29,6 +29,8 @@ typedef struct move {
 
 // Function declarations
 
+void flush_input_buffer();
+int move_input_format_valid(char* move);
 void print_board();
 void print_row();
 
