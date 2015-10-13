@@ -6,10 +6,48 @@
 
 int main()
 {
-	init_board();
+	init_board(&board, &larva_pos);
 	start();
 	free(board);
 	free(larva_pos);
+	return 0;
+}
+
+/* Returns 0 if birds do not surround larva, and 1 if they do */
+int birds_surround_larva(const Square* state, const int* larva_position) {
+	/* Larva in top row */
+	if (larva_position[0] == 7) {
+		/* Larva in top right corner */
+		if (larva_position[1] == 7 && get_square(state, 6, 6) == BIRD) {
+			return 1;
+		} else if (larva_position[1] != 7
+				&& get_square(state, 6, larva_position[1] + 1) == BIRD
+				&& get_square(state, 6, larva_position[1] - 1) == BIRD) {
+			return 1;
+		}
+	}
+	/* Larva on left edge */
+	if (larva_position[1] == 0 &&
+		get_square(state, larva_position[0] + 1, 1) == BIRD &&
+		get_square(state, larva_position[0] - 1, 1) == BIRD) {
+		return 1;
+	}
+	/* Larva on right edge */
+	if (larva_position[1] == 7 &&
+		larva_position[0] != 7 &&
+		get_square(state, larva_position[0] + 1, 6) == BIRD &&
+		get_square(state, larva_position[0] - 1, 6) == BIRD) {
+		return 1;
+	}
+	/* Larva in middle */
+	if (larva_position[0] > 0 && larva_position[0] < 7 &&
+		larva_position[1] > 0 && larva_position[1] < 7 &&
+		get_square(state, larva_position[0] + 1, larva_position[1] + 1) == BIRD &&
+		get_square(state, larva_position[0] - 1, larva_position[1] + 1) == BIRD &&
+		get_square(state, larva_position[0] + 1, larva_position[1] - 1) == BIRD &&
+		get_square(state, larva_position[0] - 1, larva_position[1] - 1) == BIRD) {
+		return 1;
+	}
 	return 0;
 }
 
@@ -21,31 +59,36 @@ void flush_input_buffer()
 	while((c = getchar()) != '\n' && c != EOF);
 }
 
-/* init_board: initializes the board in memory and sets starting piece
- * positions. */
-void init_board() 
+/* Initializes the board in memory and requests initialization of data */
+void init_board(Square** state, int** larva_position) {
+	*state = malloc(BOARD_SIZE * sizeof(*state));
+	*larva_position = malloc(2 * sizeof(*larva_position));
+	init_board_data(*state, *larva_position);
+}
+
+/* Sets starting piece positions */
+void init_board_data(Square* state, int* larva_pos) 
 {
-	board = malloc(BOARD_SIZE * sizeof(Square*));
-	memset(board, EMPTY, BOARD_SIZE * sizeof(board));
-	board[0] = BIRD;
-	board[1] = BIRD;
-	board[2] = BIRD;
-	board[3] = BIRD;
-	board[5] = LARVA;
-	larva_pos = malloc(2 * sizeof(int));
-	memset(larva_pos, 0, 2 * sizeof(int));
+	memset(state, EMPTY, BOARD_SIZE * sizeof(state));
+	state[0] = BIRD;
+	state[1] = BIRD;
+	state[2] = BIRD;
+	state[3] = BIRD;
+	state[5] = LARVA;
+	larva_pos[0] = 3;
+	larva_pos[1] = 1;
 }
 
 /* move: Performs a single move. */
-void move(Move move) 
+void move(Square* state, Move move)
 {
-	assert(move_valid(move));
-	if (get_square(move[0], move[1]) == LARVA) {
+	assert(move_valid(state, move, turn));
+	if (get_square(state, move[0], move[1]) == LARVA) {
 		larva_pos[0] = move[2];
 		larva_pos[1] = move[3];
 	}
-	set_square(move[2], move[3], get_square(move[0], move[1]));
-	set_square(move[0], move[1], EMPTY);
+	set_square(state, move[2], move[3], get_square(state, move[0], move[1]));
+	set_square(state, move[0], move[1], EMPTY);
 }
 
 /* move_input_format: formats a move (whose validity was verified by 
@@ -54,7 +97,6 @@ void move(Move move)
 void move_input_format(const char* move, Move result) 
 {
 	assert(move_input_format_valid(move) == 1);
-	memset(result, -1, 4 * sizeof(int));
 	if (move[0] < 'I') { /* if uppercase */
 		result[1] = move[0] - 'A';
 	} else { /* if lowercase */
@@ -94,20 +136,20 @@ int move_input_format_valid(const char* move)
 /* Verifies whether a move is valid. Performs basic bounds checking on the move
  * parameter.
  * Returns 1 if valid, 0 otherwise. */
-int move_valid(Move move) 
+int move_valid(const Square* state, Move move, int current_turn) 
 {
 	assert(move[0] >= 0 && move[0] < 8 && move[1] >= 0 && move[1] < 8
 		&& move[2] >= 0 && move[2] < 8 && move[3] >= 0 && move[3] < 8);
-	if (turn == BIRD_TURN) {
-		if (get_square(move[0], move[1]) == BIRD && /* src is bird */
-			get_square(move[2], move[3]) == EMPTY && /* dest is empty */
+	if (current_turn == BIRD_TURN) {
+		if (get_square(state, move[0], move[1]) == BIRD && /* src is bird */
+			get_square(state, move[2], move[3]) == EMPTY && /* dest is empty */
 			move[2] - move[0] == 1 && /* movement forward by one row only */
 			abs(move[3] - move[1]) == 1) { /* lateral movement by one only */
 			return 1;
 		}
-	} else if (turn == LARVA_TURN) {
-		if (get_square(move[0], move[1]) == LARVA && /* src is larva */
-			get_square(move[2], move[3]) == EMPTY && /* dest is empty */
+	} else if (current_turn == LARVA_TURN) {
+		if (get_square(state, move[0], move[1]) == LARVA && /* src is larva */
+			get_square(state, move[2], move[3]) == EMPTY && /* dest is empty */
 			abs(move[2] - move[0]) == 1 && /* back or forward one row only */
 			abs(move[3] - move[1]) == 1) { /* lateral movement by one only */
 			return 1;
@@ -117,7 +159,7 @@ int move_valid(Move move)
 }
 
 /* Prints the game status and board to stdout and prompts input. */
-void print_board()
+void print_board(const Square* state)
 {
 	printf("\n\n   Hungry Birds v.0.42\n   Turn %d, %s", turn_no, 
 		turn == BIRD_TURN ? "Birds' Move\n" : "Larva's Move\n");
@@ -125,20 +167,20 @@ void print_board()
 	printf("%s\n", divider);
 	int i;
 	for (i = 7; i >= 0; i--) {
-		print_row(i);			
+		print_row(state, i);			
 		printf("%s\n", divider);
 	}
 	printf("    A   B   C   D   E   F   G   H\nEnter move: ");
 }
 
 /* Prints a single row of the board to stdout. */
-void print_row(int row)
+void print_row(const Square* state, int row)
 {
 	assert(row >= 0 && row < 8);
 	printf("%d |", row + 1);
 	int i;
 	for (i = 0; i < 8; i++) {
-		switch (get_square(row, i)) {
+		switch (get_square(state, row, i)) {
 			case EMPTY:
 			case INVALID:
 				printf("   |");
@@ -155,32 +197,36 @@ void print_row(int row)
 }
 
 /* Starts the main game loop. */
-void start() {
+void start() 
+{
 	Move current_move = malloc(MOVE_SIZE * sizeof(*current_move));
 	int victory = 0;
 	while (!victory) { /* main game loop */
-		print_board();
+		print_board(board);
 		char buffer[5]; /* for input format "A1 B2" */
 		fgets(buffer, 6, stdin);
 		if (move_input_format_valid(buffer)) {
+			memset(current_move, 0, 4 * sizeof(int));
 			move_input_format(buffer, current_move);
-			if (move_valid(current_move)) {
-				move(current_move);
+			if (move_valid(board, current_move, turn)) {
+				move(board, current_move);
 			} else {
 				printf("Invalid move!\n");
+				continue;
 			}
 		} else if (strcmp(buffer, "exit\n") == 0) {
 			printf("Be seeing you...\n");
 			return;
 		} else {
 			printf("Invalid format!\n");
+			continue;
 		}
-		victory = victory_condition();
+		victory = victory_condition(board, larva_pos);
 		switch (victory) {
-			case 1: print_board();
+			case 1: print_board(board);
 					printf("\nBirds win!\n");
 					break;
-			case 2: print_board();
+			case 2: print_board(board);
 					printf("\nLarva wins!\n");
 					break;
 		}
@@ -192,49 +238,24 @@ void start() {
 
 /* Assesses whether the current board is in a victory condition.
  * Returns 2 if Larva wins, 1 if Birds win, 0 otherwise. */
-int victory_condition() {
+int victory_condition(const Square* state, const int* larva_position) 
+{
 	/* Larva wins */
 	/* Larva on bottom row wins */
-	if (larva_pos[0] == 0) {
+	if (larva_position[0] == 0) {
 		return 2;
 	}
 	int i;
 	for (i = 0; i < 28; i++) {
 		/* if Larva occurs before Bird in board array, Larva wins */
-		if (board[i] == LARVA) {
+		if (state[i] == LARVA) {
 			return 2;
-		} else if (board[i] == BIRD) {
+		} else if (state[i] == BIRD) {
 			break;
 		}
 	}
 	/* Bird wins */
-	/* Larva in top row */
-	if (larva_pos[0] == 7) {
-		/* Larva in top right corner */
-		if (larva_pos[1] == 7 && get_square(6,6) == BIRD) {
-			return 1;
-		} else if (get_square(6, larva_pos[1] + 1) == BIRD
-				&& get_square(6, larva_pos[1] - 1) == BIRD) {
-			return 1;
-		}
-	}
-	/* Larva on left edge */
-	if (larva_pos[1] == 0 &&
-		get_square(larva_pos[0] + 1, 1) == BIRD &&
-		get_square(larva_pos[0] - 1, 1) == BIRD) {
-		return 1;
-	}
-	/* Larva on right edge */
-	if (larva_pos[1] == 7 &&
-		get_square(larva_pos[0] + 1, 6) == BIRD &&
-		get_square(larva_pos[0] - 1, 6) == BIRD) {
-		return 1;
-	}
-	/* Larva in middle */
-	if (get_square(larva_pos[0] + 1, larva_pos[1] + 1) == BIRD &&
-		get_square(larva_pos[0] - 1, larva_pos[1] + 1) == BIRD &&
-		get_square(larva_pos[0] + 1, larva_pos[1] - 1) == BIRD &&
-		get_square(larva_pos[0] - 1, larva_pos[1] - 1) == BIRD) {
+	if (birds_surround_larva(state, larva_position)) {
 		return 1;
 	}
 	/* else no victory */
@@ -244,7 +265,7 @@ int victory_condition() {
 
 /* Returns the contents of a single square on the board.
  * row and col assume 0-indexed 8x8 gameboard. */
-Square get_square(int row, int col) 
+Square get_square(const Square* state, int row, int col) 
 {
 	assert(row >= 0 && row < 8 
 		&& col >= 0 && col < 8);
@@ -255,18 +276,18 @@ Square get_square(int row, int col)
 	/* Since the board is (effectively) eight rows of four squares each, we can
 	 * get the index by multiplying row by 4 and adding col/2: */
 	int index = row * 4 + col/2;
-	//printf("\nrow:%d-col:%d-square:%d-index:%d\n", row, col, board[index], index);
-	return board[index];
+	//printf("\nrow:%d-col:%d-square:%d-index:%d\n", row, col, 42, index);
+	return state[index];
 }
 
 /* Sets a single square of the board to a specified type.
  * row and col assume 0-indexed 8x8 gameboard. */
-Square set_square(int row, int col, Square square) 
+Square set_square(Square* state, int row, int col, Square square) 
 {
 	assert(row >= 0 && row < 8 
 		&& col >= 0 && col < 8);
-	Square old = get_square(row, col);
+	Square old = get_square(state, row, col);
 	int index = row * 4 + col/2;
-	board[index] = square;	
+	state[index] = square;	
 	return old;
 }

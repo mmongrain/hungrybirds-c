@@ -48,19 +48,21 @@ int turn_no = 1;
 
 /* Functions */ 
 
+int birds_surround_larva(const Square* state, const int* larva_position);
 void flush_input_buffer();
-void init_board();
-void move(Move move);
+void init_board_data(Square* state, int* larva_position);
+void init_board(Square** state, int** larva_position);
+void move(Square* state, Move move);
 void move_input_format(const char* move, int* result);
 int move_input_format_valid(const char* move);
-int move_valid(Move move);
-void print_board();
-void print_row();
+int move_valid(const Square* state, Move move, int current_turn);
+void print_board(const Square* state);
+void print_row(const Square* state, int row);
 void start();
-int victory_condition();
+int victory_condition(const Square* state, const int* larva_position);
 
 /* Accessors and mutators */
-Square set_square(int row, int col, Square square);
-Square get_square(int row, int col);
+Square set_square(Square* state, int row, int col, Square square);
+Square get_square(const Square* state, int row, int col);
 
 #endif
