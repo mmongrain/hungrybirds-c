@@ -5,8 +5,9 @@
 #define BOARD_SIZE 32
 #define POSITION_SIZE 2
 #define MOVE_SIZE 4
-#define LARVA_TURN = 0
-#define BIRD_TURN = 1
+#define NO_VICTORY 0
+#define BIRD_VICTORY 1
+#define LARVA_VICTORY 2
 
 /* Options */
 struct {
@@ -18,6 +19,7 @@ struct {
 
 /* Types */
 typedef enum square { EMPTY, BIRD, LARVA, INVALID } Square;
+typedef enum turn { BIRD_TURN, LARVA_TURN } Turn;
 
 /* By convention, int[2], where 
  * [0]: row, 
@@ -30,10 +32,19 @@ typedef enum square { EMPTY, BIRD, LARVA, INVALID } Square;
  * [3]: dest col */
 typedef int* Move;
 
+/* Global variables */
+
 /* Pointer to the global board, an int[32].
  * Initialized by init_board(). 
  * Accessed and mutated by set_square() and get_square(). */
 Square* board;
+
+/* Stores the current turn */
+Turn turn = LARVA_TURN;
+int* larva_pos;
+
+/* Stores the current turn number */
+int turn_no = 1;
 
 /* Functions */ 
 
@@ -45,6 +56,8 @@ int move_input_format_valid(const char* move);
 int move_valid(Move move);
 void print_board();
 void print_row();
+void start();
+int victory_condition();
 
 /* Accessors and mutators */
 Square set_square(int row, int col, Square square);
