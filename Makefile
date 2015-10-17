@@ -1,2 +1,2 @@
 all:
-	gcc hungrybirds.c -Wall -Wextra -o a.o
+	gcc hungrybirds.c -g -Wall -Wextra -o a.o
