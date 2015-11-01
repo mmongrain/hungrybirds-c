@@ -2,9 +2,17 @@
 #define HUNGRYBIRDS_H
 
 /* Constants */
-#define BOARD_SIZE 32
-#define POSITION_SIZE 2
 #define MOVE_SIZE 4
+#define LARVA_ROW 1
+#define LARVA_COL 3
+#define BIRD1_ROW 0
+#define BIRD1_COL 0
+#define BIRD2_ROW 0
+#define BIRD2_COL 2
+#define BIRD3_ROW 0
+#define BIRD3_COL 4
+#define BIRD4_ROW 0
+#define BIRD4_COL 6
 
 /* Options */
 struct {
@@ -15,34 +23,45 @@ struct {
 } options;
 
 /* Types */
-typedef enum square { EMPTY, BIRD, LARVA, INVALID } Square;
-typedef enum turn { BIRD_TURN, LARVA_TURN } Turn;
-typedef enum victory { NO_VICTORY, BIRD_VICTORY, LARVA_VICTORY } Victory;
-typedef Square* Board;
-/* By convention, int[4], where 
- * [0]: src row, 
- * [1]: src col, 
- * [2]: dest row, 
- * [3]: dest col */
-typedef int* Move;
+typedef enum Square { EMPTY, BIRD, LARVA, INVALID } Square;
+typedef enum Turn { BIRD_TURN, LARVA_TURN } Turn;
+typedef enum Victory { NO_VICTORY, BIRD_VICTORY, LARVA_VICTORY } Victory;
+
+typedef struct Move { 
+	int src_row;
+	int src_col;
+	int dest_row;
+	int dest_col;
+} Move;
+
+/* The board state. Just stores the positions of the pieces (no need to keep
+ * track of empty or invalid squares as those can be deduced from the below) */
+typedef struct State {
+	int larva_row;
+	int larva_col;
+	int bird1_row;
+	int bird1_col;
+	int bird2_row;
+	int bird2_col;
+	int bird3_row;
+	int bird3_col;
+	int bird4_row;
+	int bird4_col;
+} State;
+
 
 /* Functions */ 
-
-int birds_surround_larva(const Board state, const int* larva_position);
+int birds_surround_larva(const State *state);
 void flush_input_buffer();
-void init_board_data(Board state, int* larva_position);
-void init_board(Board* state, int** larva_position);
-void move(Board state, Move move, int turn, int* larva_position);
-void move_input_format(const char* move, int* result);
+void init_board(State *state);
+void move(State *state, Move *move, int turn);
+void move_input_format(const char* move, Move *result);
 int move_input_format_valid(const char* move);
-int move_valid(const Board state, Move move, int current_turn);
-void print_board(const Board state, int turn, int turn_no);
-void print_row(const Board state, int row);
+int move_valid(const State *state, Move *move, int current_turn);
+void print_board(const State *state, int turn, int turn_no);
+void print_row(const State *state, int row);
 void twoplayer_start();
-int victory_condition(const Board state, const int* larva_position);
-
-/* Accessors and mutators */
-Square set_square(Board state, int row, int col, Square square);
-Square get_square(const Board state, int row, int col);
+int victory_condition(const State *state);
+Square get_square(const State *state, int row, int col);
 
 #endif
