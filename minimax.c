@@ -1,10 +1,16 @@
+/*******************************************************************************
+* minimax.c - A minimax implementation for Hungry Birds
+* by Matthew Mongrain, 11-11-2015
+*******************************************************************************/
+
+#include "hb_functions.h"
+#include "hungrybirds.h"
+#include "minimax.h"
 #include <assert.h>
 #include <glib.h>
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "minimax.h"
-#include "hungrybirds.h"
 
 void generate_moves(const State *state, GSList **moves, int turn) 
 {
@@ -173,10 +179,11 @@ void generate_larva_moves(const State *state, GSList **moves)
 
 void generate_states(const State *state, GSList **states, int turn) {
 	assert(state);
-	GSList *moves;
+	GSList *moves = NULL;
 	generate_moves(state, &moves, turn);
 	GSList *elem = NULL;
 	Move *single_move = NULL;
+	printf("Length: %d\n", g_slist_length(moves));
 	for (elem = moves; elem; elem = elem->next) {
 		State *child = g_new(State, 1);
 		*child = *state;
@@ -184,8 +191,22 @@ void generate_states(const State *state, GSList **states, int turn) {
 		move(child, single_move, turn);
 		*states = g_slist_prepend(*states, child);
 	}
-	g_slist_free(moves);
+	g_slist_free_full(moves, hb_destroy);
 }
+
+/*
+int minimax(const State *state, Move **result, int turn, int depth) {
+	if (depth = 1) {
+		if (turn == LARVA_TURN) {
+			return maximum(state, result);
+		} else {
+			return minimum(state, result);
+		}
+	}
+	generate_moves(state, 
+	
+}
+*/
 
 int naive_heuristic(const State *state) {
 	assert(state);

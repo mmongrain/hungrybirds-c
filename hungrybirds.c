@@ -3,6 +3,7 @@
 * by Matthew Mongrain, 12-10-2015
 *******************************************************************************/
 
+#include "hb_functions.h"
 #include "hungrybirds.h"
 #include "minimax.h"
 #include <glib.h>
@@ -11,7 +12,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#define VERSION "0.46"
+#define VERSION "0.47"
 
 void test_start();
 
@@ -42,16 +43,16 @@ void test_start()
 		print_board(&initial_state, turn, turn_no);
 		GSList *inner_list = NULL;
 		GSList *inner_elem = NULL;
-		Move *inner_move = NULL;
-		generate_moves(&initial_state, &inner_list, !turn);
+		generate_states(&initial_state, &inner_list, !turn);
 		printf("============\nCHILD STATES\n============\n");
 		for (inner_elem = inner_list; inner_elem; inner_elem = inner_elem->next) {
-			State parent_state = initial_state;
-			inner_move = inner_elem->data;
-			move(&parent_state, inner_move, !turn);
-			print_board(&parent_state, !turn, turn_no + 1);
+			print_board((State*)inner_elem->data, !turn, turn_no + 1);
 		}
+		g_slist_free_full(inner_list, hb_destroy);
+		g_slist_free(inner_elem);
 	}
+	g_slist_free_full(list, hb_destroy);
+	g_slist_free(elem);
 }
 
 /* birds_surround_larva: Returns 0 if birds do not surround larva, and 1 if 

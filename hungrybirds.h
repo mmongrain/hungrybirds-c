@@ -33,6 +33,7 @@ typedef struct Move {
 	int src_col;
 	int dest_row;
 	int dest_col;
+	int value;
 } Move;
 
 /* The board state. Just stores the positions of the pieces (no need to keep
