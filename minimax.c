@@ -16,8 +16,8 @@ void generate_moves(const State *state, GSList **moves, int turn)
 	}
 }
 
-
 void generate_bird_moves(const State *state, GSList **moves) {
+	assert(state);
 	if (state->bird1_row < 7) {
 		if (state->bird1_col < 7) {
 			if (get_square(state, state->bird1_row + 1, state->bird1_col + 1)
@@ -121,6 +121,7 @@ void generate_bird_moves(const State *state, GSList **moves) {
 
 void generate_larva_moves(const State *state, GSList **moves)
 {
+	assert(state);
 	if (state->larva_row < 7) {
 		if (state->larva_col < 7) {
 			if (get_square(state, state->larva_row + 1, state->larva_col + 1)
@@ -168,4 +169,48 @@ void generate_larva_moves(const State *state, GSList **moves)
 			*moves = g_slist_prepend(*moves, downleft);
 		}
 	}
+}
+
+void generate_states(const State *state, GSList **states, int turn) {
+	assert(state);
+	GSList *moves;
+	generate_moves(state, &moves, turn);
+	GSList *elem = NULL;
+	Move *single_move = NULL;
+	for (elem = moves; elem; elem = elem->next) {
+		State *child = g_new(State, 1);
+		*child = *state;
+		single_move = elem->data;
+		move(child, single_move, turn);
+		*states = g_slist_prepend(*states, child);
+	}
+	g_slist_free(moves);
+}
+
+int naive_heuristic(const State *state) {
+	assert(state);
+	int larva_value = nh_square_value(state->larva_row, state->larva_col); 
+	int bird1_value = nh_square_value(state->bird1_row, state->bird1_col);
+	int bird2_value = nh_square_value(state->bird2_row, state->bird2_col);
+	int bird3_value = nh_square_value(state->bird3_row, state->bird3_col);
+	int bird4_value = nh_square_value(state->bird4_row, state->bird4_col);
+	return larva_value - bird1_value - bird2_value - bird3_value - bird4_value;
+}
+
+int nh_square_value(int row, int col) {
+	assert(row >= 0 && row < 8);
+	assert(col >= 0 && row < 8);
+	row++;
+	col++;
+	switch (row) {
+		case 1: return 56 + col;
+		case 2: return 48 + col;
+		case 3: return 40 + col;
+		case 4: return 32 + col;
+		case 5: return 24 + col;
+		case 6: return 16 + col;
+		case 7: return 8 + col;
+		case 8: return col;
+	}
+	return 0;
 }

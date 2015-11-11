@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#define VERSION "0.44"
+#define VERSION "0.46"
 
 void test_start();
 
@@ -28,6 +28,8 @@ void test_start()
 	init_board(&initial_state);
 	int turn_no = 1;
 	Turn turn = LARVA_TURN;
+	printf("=============\nINITIAL STATE\n=============\n");
+	print_board(&initial_state, turn, turn_no);
 	GSList *list = NULL;
 	GSList *elem = NULL;
 	generate_moves(&initial_state, &list, turn);
@@ -200,8 +202,13 @@ int move_valid(const State *state, Move *move, int current_turn)
 void print_board(const State *state, int turn, int turn_no)
 {
 	assert(state);
-	printf("\n\n   Hungry Birds v%s\n   Turn %d, %s", VERSION, turn_no, 
-		turn == BIRD_TURN ? "Birds' Move\n" : "Larva's Move\n");
+	printf(
+		"\n\n   Hungry Birds v%s\n   Turn %d, %s\th(n) = %d\n", 
+		VERSION, 
+		turn_no, 
+		turn == BIRD_TURN ? "Birds' Move" : "Larva's Move", 
+		naive_heuristic(state)
+	);
 	char* divider = "  +-------------------------------+";
 	printf("%s\n", divider);
 	int i;
