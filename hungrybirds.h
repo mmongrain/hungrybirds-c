@@ -3,6 +3,7 @@
 
 /* Constants */
 #define MOVE_SIZE 4
+/* Initial board state */
 #define LARVA_ROW 1
 #define LARVA_COL 3
 #define BIRD1_ROW 0

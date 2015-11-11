@@ -4,17 +4,52 @@
 *******************************************************************************/
 
 #include "hungrybirds.h"
+#include "minimax.h"
+#include <glib.h>
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
-#define VERSION "0.43"
+#define VERSION "0.44"
+
+void test_start();
 
 int main()
 {
-	twoplayer_start();
+	test_start();
+	//twoplayer_start();
 	return 0;
+}
+
+void test_start() 
+{
+	State initial_state;
+	init_board(&initial_state);
+	int turn_no = 1;
+	Turn turn = LARVA_TURN;
+	GSList *list = NULL;
+	GSList *elem = NULL;
+	generate_moves(&initial_state, &list, turn);
+	Move *generated_move = NULL;
+	for (elem = list; elem; elem = elem->next) {
+		printf("============\nPARENT STATE\n============\n");
+		init_board(&initial_state);
+		generated_move = elem->data;
+		move(&initial_state, generated_move, turn);
+		print_board(&initial_state, turn, turn_no);
+		GSList *inner_list = NULL;
+		GSList *inner_elem = NULL;
+		Move *inner_move = NULL;
+		generate_moves(&initial_state, &inner_list, !turn);
+		printf("============\nCHILD STATES\n============\n");
+		for (inner_elem = inner_list; inner_elem; inner_elem = inner_elem->next) {
+			State parent_state = initial_state;
+			inner_move = inner_elem->data;
+			move(&parent_state, inner_move, !turn);
+			print_board(&parent_state, !turn, turn_no + 1);
+		}
+	}
 }
 
 /* birds_surround_larva: Returns 0 if birds do not surround larva, and 1 if 
