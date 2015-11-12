@@ -183,7 +183,6 @@ void generate_states(const State *state, GSList **states, int turn) {
 	generate_moves(state, &moves, turn);
 	GSList *elem = NULL;
 	Move *single_move = NULL;
-	printf("Length: %d\n", g_slist_length(moves));
 	for (elem = moves; elem; elem = elem->next) {
 		State *child = g_new(State, 1);
 		*child = *state;
@@ -194,19 +193,64 @@ void generate_states(const State *state, GSList **states, int turn) {
 	g_slist_free_full(moves, hb_destroy);
 }
 
-/*
-int minimax(const State *state, Move **result, int turn, int depth) {
-	if (depth = 1) {
-		if (turn == LARVA_TURN) {
-			return maximum(state, result);
-		} else {
-			return minimum(state, result);
-		}
-	}
-	generate_moves(state, 
-	
+void hb_destroy(gpointer data)
+{
+	free(data);
 }
-*/
+
+int minimax(const State *state, State **result, int turn, int depth, int initial_depth) {
+	options.debug = 1;
+	int best = (turn == BIRD_TURN) ? LOTS : -LOTS;
+	if (depth == 0) {
+		best = naive_heuristic(state);
+		if (options.debug) {
+			int i;
+			for (i = 0; i < initial_depth - depth; i++) {
+				printf("\t");
+			}
+			printf("Leaf node: %d\n", best);
+		}
+	} else {
+		int val = 0;
+		GSList *children = NULL;
+		generate_states(state, &children, turn);
+		GSList *iter = NULL;
+		for (iter = children; iter; iter = iter->next) {
+			State *child = (State*)(iter->data);
+			val = minimax(child, result, !turn, depth - 1, initial_depth);
+			if (turn == LARVA_TURN) {
+				if (val > best) {
+					if (depth == initial_depth) {
+						**result = *child;
+					}
+					best = val;
+				}
+			}
+			if (turn == BIRD_TURN) {
+				if (val < best) {
+					if (depth == initial_depth) {
+						**result = *child;
+					}
+					best = val;
+				}
+			}
+		}
+		if (options.debug) {
+			int i = 0;
+			for (; i < initial_depth - depth; i++) {
+				printf("\t");
+			}
+			printf(
+				"%s retrieved state with value: %d\n", 
+				(turn == LARVA_TURN) ? "Larva" : "Bird",
+				best
+			);
+		}
+		g_slist_free_full(children, hb_destroy);
+		g_slist_free(iter);
+	}
+	return best;
+}
 
 int naive_heuristic(const State *state) {
 	assert(state);

@@ -3,10 +3,8 @@
 * by Matthew Mongrain, 12-10-2015
 *******************************************************************************/
 
-#include "hb_functions.h"
 #include "hungrybirds.h"
 #include "minimax.h"
-#include <glib.h>
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,30 +27,11 @@ void test_start()
 	init_board(&initial_state);
 	int turn_no = 1;
 	Turn turn = LARVA_TURN;
-	printf("=============\nINITIAL STATE\n=============\n");
-	print_board(&initial_state, turn, turn_no);
-	GSList *list = NULL;
-	GSList *elem = NULL;
-	generate_moves(&initial_state, &list, turn);
-	Move *generated_move = NULL;
-	for (elem = list; elem; elem = elem->next) {
-		printf("============\nPARENT STATE\n============\n");
-		init_board(&initial_state);
-		generated_move = elem->data;
-		move(&initial_state, generated_move, turn);
-		print_board(&initial_state, turn, turn_no);
-		GSList *inner_list = NULL;
-		GSList *inner_elem = NULL;
-		generate_states(&initial_state, &inner_list, !turn);
-		printf("============\nCHILD STATES\n============\n");
-		for (inner_elem = inner_list; inner_elem; inner_elem = inner_elem->next) {
-			print_board((State*)inner_elem->data, !turn, turn_no + 1);
-		}
-		g_slist_free_full(inner_list, hb_destroy);
-		g_slist_free(inner_elem);
-	}
-	g_slist_free_full(list, hb_destroy);
-	g_slist_free(elem);
+	State *target_state;
+	target_state = malloc(sizeof(State));
+	minimax(&initial_state, &target_state, turn, 6, 6);
+	print_board(target_state, turn, turn_no);
+	free(target_state);
 }
 
 /* birds_surround_larva: Returns 0 if birds do not surround larva, and 1 if 
