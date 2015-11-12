@@ -3,7 +3,6 @@
 * by Matthew Mongrain, 11-11-2015
 *******************************************************************************/
 
-#include "hb_functions.h"
 #include "hungrybirds.h"
 #include "minimax.h"
 #include <assert.h>
@@ -199,7 +198,6 @@ void hb_destroy(gpointer data)
 }
 
 int minimax(const State *state, State **result, int turn, int depth, int initial_depth) {
-	options.debug = 1;
 	int best = (turn == BIRD_TURN) ? LOTS : -LOTS;
 	if (depth == 0) {
 		best = naive_heuristic(state);
@@ -232,6 +230,67 @@ int minimax(const State *state, State **result, int turn, int depth, int initial
 						**result = *child;
 					}
 					best = val;
+				}
+			}
+		}
+		if (options.debug) {
+			int i = 0;
+			for (; i < initial_depth - depth; i++) {
+				printf("\t");
+			}
+			printf(
+				"%s retrieved state with value: %d\n", 
+				(turn == LARVA_TURN) ? "Larva" : "Bird",
+				best
+			);
+		}
+		g_slist_free_full(children, hb_destroy);
+		g_slist_free(iter);
+	}
+	return best;
+}
+
+int alphabeta(const State *state, State **result, int alpha, int beta, int turn, int depth, int initial_depth) {
+	int best = (turn == BIRD_TURN) ? LOTS : -LOTS;
+	if (depth == 0) {
+		best = naive_heuristic(state);
+		if (options.debug) {
+			int i;
+			for (i = 0; i < initial_depth - depth; i++) {
+				printf("\t");
+			}
+			printf("Leaf node: %d\n", best);
+		}
+	} else {
+		int val = 0;
+		GSList *children = NULL;
+		generate_states(state, &children, turn);
+		GSList *iter = NULL;
+		for (iter = children; iter; iter = iter->next) {
+			State *child = (State*)(iter->data);
+			val = alphabeta(child, result, alpha, beta, !turn, depth - 1, initial_depth);
+			if (turn == LARVA_TURN) {
+				if (val > best) {
+					if (depth == initial_depth) {
+						**result = *child;
+					}
+					best = val;
+				}
+				if (best > alpha && beta <= best) {
+					printf("Pruned...\n");
+					break;
+				}
+			}
+			if (turn == BIRD_TURN) {
+				if (val < best) {
+					if (depth == initial_depth) {
+						**result = *child;
+					}
+					best = val;
+				}
+				if (beta < best && best <= alpha) {
+					printf("Pruned...\n");
+					break;
 				}
 			}
 		}

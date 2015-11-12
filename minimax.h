@@ -6,6 +6,7 @@
 
 #define LOTS 1337
 
+int alphabeta(const State *state, State **result, int alpha, int beta, int turn, int depth, int initial_depth);
 void generate_moves(const State *state, GSList **moves, int turn);
 void generate_bird_moves(const State *state, GSList **moves); 
 void generate_larva_moves(const State *state, GSList **moves);

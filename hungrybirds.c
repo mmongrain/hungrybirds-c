@@ -10,14 +10,47 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#define VERSION "0.47"
+#define VERSION "0.49"
 
 void test_start();
 
-int main()
+int main(int argc, char *argv[])
 {
-	test_start();
-	//twoplayer_start();
+	int i;
+	int larva_player = 0;
+	int bird_player = 0;
+	int depth_flag = 0;
+	int depth = 3;
+	for (i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "-d") == 0) {
+			depth_flag = 1;
+			if (i + 1 <= argc - 1) {
+				i++;
+				depth = atoi(argv[i]);
+			} else {
+				fprintf(stderr, "usage: %s [-d depth]\n\t-d depth: difficulty (depth) of AI opponent (>= 1)\n\t\t(default depth is 3)\n", argv[0]);
+				exit(1);
+			}
+		}
+		if (strcmp(argv[i], "-l") == 0) {
+			larva_player = 1;
+		}
+		if (strcmp(argv[i], "-b") == 0) {
+			bird_player = 1;
+		}
+		if (strcmp(argv[i], "-v") == 0) {
+			options.debug = 1;
+		}
+	}
+	if (larva_player) {
+		oneplayer_start(LARVA_TURN, depth);
+	}
+	if (bird_player) {
+		oneplayer_start(BIRD_TURN, depth);
+	}
+	if (!larva_player && !bird_player) {
+		twoplayer_start();
+	}
 	return 0;
 }
 
@@ -29,7 +62,9 @@ void test_start()
 	Turn turn = LARVA_TURN;
 	State *target_state;
 	target_state = malloc(sizeof(State));
-	minimax(&initial_state, &target_state, turn, 6, 6);
+	minimax(&initial_state, &target_state, turn, 10, 10);
+	print_board(target_state, turn, turn_no);
+	alphabeta(&initial_state, &target_state, -LOTS, LOTS, turn, 10, 10);
 	print_board(target_state, turn, turn_no);
 	free(target_state);
 }
@@ -275,6 +310,65 @@ void twoplayer_start()
 	}
 }
 
+/* twoplayer_start: starts the main game loop for the two-player game. */
+void oneplayer_start(int player, int depth) 
+{
+	State state;
+	init_board(&state);
+	int turn_no = 1;
+	Turn turn = LARVA_TURN;
+	Move current_move;
+
+	int victory = 0;
+	while (!victory) { /* main game loop */
+		print_board(&state, turn, turn_no);
+		if (player == turn) {
+			printf("Enter move: ");
+			char buffer[5]; /* for input format "A1 B2" */
+			fgets(buffer, 6, stdin);
+			if (move_input_format_valid(buffer)) {
+				memset(&current_move, 0, 4 * sizeof(int));
+				move_input_format(buffer, &current_move);
+				if (move_valid(&state, &current_move, turn)) {
+					move(&state, &current_move, turn);
+				} else {
+					printf("Invalid move!\n");
+					flush_input_buffer();
+					continue;
+				}
+			} else if (strcmp(buffer, "exit\n") == 0) {
+				printf("Be seeing you...\n");
+				return;
+			} else {
+				printf("Invalid format!\n");
+				flush_input_buffer();
+				continue;
+			}
+			flush_input_buffer();
+		} else {
+			State *target_state = malloc(sizeof(State));
+			printf("\n\nThinking...\n");
+			minimax(&state, &target_state, turn, depth, depth);
+			printf("   ...got it!\n");
+			state = *target_state;
+			free(target_state);
+		}
+
+		victory = victory_condition(&state);
+		switch (victory) {
+			case BIRD_VICTORY: 
+				print_board(&state, turn, turn_no);
+				printf("\nBirds win!\n");
+				break;
+			case LARVA_VICTORY: 
+				print_board(&state, turn, turn_no);
+				printf("\nLarva wins!\n");
+				break;
+		}
+		turn = !turn;
+		turn_no++;
+	}
+}
 /* victory_condition: Assesses whether parameters constitute a victory
  * condition. */
 int victory_condition(const State *state) 

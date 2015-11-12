@@ -60,6 +60,7 @@ void move(State *state, Move *move, int turn);
 void move_input_format(const char* move, Move *result);
 int move_input_format_valid(const char* move);
 int move_valid(const State *state, Move *move, int current_turn);
+void oneplayer_start(int player, int depth);
 void print_board(const State *state, int turn, int turn_no);
 void print_row(const State *state, int row);
 void twoplayer_start();
