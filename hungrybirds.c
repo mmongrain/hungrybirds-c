@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#define VERSION "0.49"
+#define VERSION "0.50"
 
 void test_start();
 
@@ -221,7 +221,7 @@ void print_board(const State *state, int turn, int turn_no)
 		"\n\n   Hungry Birds v%s\n   Turn %d, %s\th(n) = %d\n", 
 		VERSION, 
 		turn_no, 
-		turn == BIRD_TURN ? "Birds' Move" : "Larva's Move", 
+		turn == BIRD_TURN ? "Birds" : "Larva", 
 		naive_heuristic(state)
 	);
 	char* divider = "  +-------------------------------+";
@@ -348,10 +348,20 @@ void oneplayer_start(int player, int depth)
 		} else {
 			State *target_state = malloc(sizeof(State));
 			printf("\n\nThinking...\n");
-			minimax(&state, &target_state, turn, depth, depth);
+			int state_value = 0;
+			state_value = minimax(&state, &target_state, turn, depth, depth);
 			printf("   ...got it!\n");
 			state = *target_state;
 			free(target_state);
+			/* If the minimax algo has determined death is inevitable: */
+			if (state_value == LOTS || state_value == -LOTS) {
+				turn = !turn;
+				printf("%s %s... you %s! Congratulations!\n",
+				(turn == BIRD_TURN) ? "Larva" : "Birds",
+				(turn == BIRD_TURN) ? "concedes" : "concede",
+				(turn == BIRD_TURN) ? "eat the larva with gusto" : "flee with your life");
+				break;
+			}
 		}
 
 		victory = victory_condition(&state);
@@ -380,12 +390,27 @@ int victory_condition(const State *state)
 	if (row == 0) {
 		return LARVA_VICTORY;
 	}
+	/* Birds can't move wins */
+	/* XXX: Temporary condition for naive-heuristic AI */
+	/* TODO: Better */
+	GSList* bird_moves = NULL;
+	generate_moves(state, &bird_moves, BIRD_TURN);
+	int bird_moves_length = g_slist_length(bird_moves);
+	g_slist_free_full(bird_moves, hb_destroy);
+	if (bird_moves_length == 0) {
+		return LARVA_VICTORY;
+	}
+	/* Larva with unobstructed path to bottom row wins */
+	/* This can mess with the naive-heuristic AI so commented out for now */
+	/*
 	if (row <= state->bird1_row &&
 		row <= state->bird2_row &&
 		row <= state->bird3_row &&
 		row <= state->bird4_row) {
 		return LARVA_VICTORY;
 	}
+	*/
+
 	/* Bird wins */
 	if (get_square(state, row + 1, col + 1) != EMPTY &&
 		get_square(state, row + 1, col - 1) != EMPTY &&

@@ -213,39 +213,44 @@ int minimax(const State *state, State **result, int turn, int depth, int initial
 		GSList *children = NULL;
 		generate_states(state, &children, turn);
 		GSList *iter = NULL;
-		for (iter = children; iter; iter = iter->next) {
-			State *child = (State*)(iter->data);
-			val = minimax(child, result, !turn, depth - 1, initial_depth);
-			if (turn == LARVA_TURN) {
-				if (val > best) {
+		if (children != NULL) {
+			for (iter = children; iter; iter = iter->next) {
+				State *child = (State*)(iter->data);
+				val = minimax(child, result, !turn, depth - 1, initial_depth);
+				if (turn == LARVA_TURN && val > best && val != MINIMAX_ERROR) {
 					if (depth == initial_depth) {
 						**result = *child;
 					}
 					best = val;
 				}
-			}
-			if (turn == BIRD_TURN) {
-				if (val < best) {
+				if (turn == BIRD_TURN && val < best && val != MINIMAX_ERROR) {
 					if (depth == initial_depth) {
 						**result = *child;
+						print_board(*result, turn, depth);
 					}
 					best = val;
 				}
 			}
-		}
-		if (options.debug) {
-			int i = 0;
-			for (; i < initial_depth - depth; i++) {
+			if (options.debug) {
+				int i = 0;
+				for (; i < initial_depth - depth; i++) {
+					printf("\t");
+				}
+				printf(
+					"%s retrieved state with value: %d\n", 
+					(turn == LARVA_TURN) ? "Larva" : "Bird",
+					best
+				);
+			}
+			g_slist_free_full(children, hb_destroy);
+			g_slist_free(iter);
+		} else if (options.debug) {
+			int i;
+			for (i = 0; i < initial_depth - depth; i++) {
 				printf("\t");
 			}
-			printf(
-				"%s retrieved state with value: %d\n", 
-				(turn == LARVA_TURN) ? "Larva" : "Bird",
-				best
-			);
+			printf("No valid children to this node! Returning %d\n", MINIMAX_ERROR);
 		}
-		g_slist_free_full(children, hb_destroy);
-		g_slist_free(iter);
 	}
 	return best;
 }
@@ -323,7 +328,7 @@ int naive_heuristic(const State *state) {
 
 int nh_square_value(int row, int col) {
 	assert(row >= 0 && row < 8);
-	assert(col >= 0 && row < 8);
+	assert(col >= 0 && col < 8);
 	row++;
 	col++;
 	switch (row) {

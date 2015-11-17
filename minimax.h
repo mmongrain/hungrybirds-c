@@ -5,6 +5,7 @@
 #include "hungrybirds.h"
 
 #define LOTS 1337
+#define MINIMAX_ERROR 666666
 
 int alphabeta(const State *state, State **result, int alpha, int beta, int turn, int depth, int initial_depth);
 void generate_moves(const State *state, GSList **moves, int turn);
