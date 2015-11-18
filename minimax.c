@@ -202,6 +202,7 @@ int minimax(const State *state, State **result, int turn, int depth, int initial
 	if (depth == 0) {
 		best = naive_heuristic(state);
 		if (options.debug) {
+			//print_board(state, turn, depth);
 			int i;
 			for (i = 0; i < initial_depth - depth; i++) {
 				printf("\t");
@@ -226,7 +227,7 @@ int minimax(const State *state, State **result, int turn, int depth, int initial
 				if (turn == BIRD_TURN && val < best && val != MINIMAX_ERROR) {
 					if (depth == initial_depth) {
 						**result = *child;
-						print_board(*result, turn, depth);
+						//print_board(*result, turn, depth);
 					}
 					best = val;
 				}
